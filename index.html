@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panda Ansioso | Downloads (Gerenciável)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { margin: 0; padding: 15px 10px; background-color: #0b0e14; color: #ffffff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .main-container { width: 100%; max-width: 400px; background: #151921; padding: 20px; border: 1px solid #333; border-radius: 15px; text-align: center; box-sizing: border-box; }
+        
+        .profile-img { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #39ff14; margin-bottom: 10px; object-fit: cover; }
+        
+        h1 { font-size: 1.3rem; color: #39ff14; margin-bottom: 20px; }
+        .video-wrapper { position: relative; width: 100%; padding-top: 56.25%; border: 2px solid #2b5797; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        .suggestions { margin: 15px 0; text-align: left; }
+        .sug-card { display: none; align-items: center; background: #1c222d; padding: 8px; margin-bottom: 8px; border-radius: 8px; text-decoration: none; color: white; transition: background 0.2s; }
+        .sug-card:hover { background: #252d3d; }
+        .sug-card.show { display: flex; }
+        .sug-card img { width: 70px; height: 40px; border-radius: 4px; object-fit: cover; margin-right: 10px; flex-shrink: 0; }
+        .sug-card span { font-size: 0.75rem; font-weight: bold; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .btn-toggle { background: transparent; color: #2b5797; border: 1px solid #2b5797; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 0.7rem; width: 100%; margin-top: 10px; font-weight: bold; }
+
+        .download-item { background: #1c222d; padding: 15px; margin-bottom: 15px; border-radius: 10px; text-align: center; }
+        .file-name { font-weight: bold; margin-bottom: 10px; display: block; color: #fff; }
+        .btn-download { width: 100%; background: transparent; color: #39ff14; border: 1px solid #39ff14; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.2s ease; }
+        .btn-download.ready { background: #39ff14; color: #0b0e14; border-color: #39ff14; }
+        .progress-container { display: none; margin-top: 10px; width: 100%; background: #0b0e14; border-radius: 5px; height: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: #39ff14; transition: width 1s linear; }
+
+        .social-container { display: flex; justify-content: space-between; gap: 5px; margin-top: 20px; }
+        .btn-social { flex: 1; padding: 8px 2px; border-radius: 8px; border: 1px solid #333; background: #1c222d; color: white; text-decoration: none; font-size: 0.6rem; text-align: center; }
+        
+        #device-indicator { font-size: 0.65rem; color: #444; margin-top: 15px; }
+        footer { font-size: 0.7rem; color: #555; margin-top: 10px; }
+
+        /* Estilização para Anúncios */
+        .ad-container { margin: 15px 0; display: flex; justify-content: center; }
+        .ad-pc { display: block; }
+        .ad-mobile { display: none; }
+        @media (max-width: 768px) {
+            .ad-pc { display: none !important; }
+            .ad-mobile { display: flex !important; }
+        }
+
+        /* Botão do Admin */
+        .admin-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #39ff14;
+            color: #0b0e14;
+            border: none;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .admin-btn:hover { transform: scale(1.1); }
+
+        /* Painel Admin */
+        .admin-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1001;
+            display: none;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .admin-panel.show { display: block; }
+        .admin-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #1c222d;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        .admin-content h2 { color: #39ff14; margin-top: 0; }
+        .admin-content label { display: block; margin-top: 15px; font-weight: bold; }
+        .admin-content input, .admin-content textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            background: #0b0e14;
+            border: 1px solid #2b5797;
+            color: white;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .admin-content textarea { min-height: 100px; }
+        .admin-buttons { margin-top: 20px; display: flex; gap: 10px; }
+        .admin-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-save { background: #39ff14; color: #0b0e14; }
+        .btn-close { background: #2b5797; color: white; }
+        .sug-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #2b5797; }
+        .sug-item button { background: #d32f2f; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px; }
+        .btn-add { background: #39ff14; color: #0b0e14; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- ANÚNCIO DE TOPO -->
+    <div class="ad-container ad-pc">
+        <script>atOptions = {'key' : '0090fc855bce8fb389926eabcc55ed1f', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {}};</script>
+        <script src="https://www.highperformanceformat.com/0090fc855bce8fb389926eabcc55ed1f/invoke.js"></script>
+    </div>
+    <div class="ad-container ad-mobile">
+        <script>atOptions = {'key' : '41eb470e322f84ddcbac2a56ee7c4ef5', 'format' : 'iframe', 'height' : 50, 'width' : 320, 'params' : {}};</script>
+        <script src="https://www.highperformanceformat.com/41eb470e322f84ddcbac2a56ee7c4ef5/invoke.js"></script>
+    </div>
+
+    <div class="main-container">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQUTRcakJ17OLqxRQNrbGDd92Kh-99ZqQLTDJ4z9JMa6A&s" alt="Panda Ansioso" class="profile-img">
+        
+        <h1>Panda Ansioso</h1>
+        
+        <div class="video-wrapper">
+            <iframe id="random-video" src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <div class="suggestions" id="suggestions-list">
+            <button class="btn-toggle" id="btn-toggle" onclick="toggleView()">VER MAIS</button>
+        </div>
+
+        <!-- ANÚNCIO BANDEIRA NATIVO -->
+        <div class="ad-container">
+            <script async="async" data-cfasync="false" src="https://pl29740469.effectivecpmnetwork.com/94f71d23e1cb7f5455caa2e345da6d0b/invoke.js"></script>
+            <div id="container-94f71d23e1cb7f5455caa2e345da6d0b"></div>
+        </div>
+
+        <div class="download-item">
+            <span class="file-name" id="download1-name">📦 Pulsar OS</span>
+            <button class="btn-download" data-clicked="false" data-link="" onclick="startDownload(this, this.getAttribute('data-link'))">🔒 DOWNLOAD</button>
+            <div class="progress-container"><div class="progress-bar"></div></div>
+        </div>
+
+        <div class="download-item">
+            <span class="file-name" id="download2-name">📦 Mist OS</span>
+            <button class="btn-download" data-clicked="false" data-link="" onclick="startDownload(this, this.getAttribute('data-link'))">🔒 DOWNLOAD</button>
+            <div class="progress-container"><div class="progress-bar"></div></div>
+        </div>
+
+        <div class="social-container">
+            <a href="#" id="social-tiktok" class="btn-social" target="_blank"><i class="fab fa-tiktok"></i> TikTok</a>
+            <a href="#" id="social-telegram-grupo" class="btn-social" target="_blank"><i class="fab fa-telegram"></i> Grupo Telegram</a>
+            <a href="#" id="social-telegram-perfil" class="btn-social" target="_blank"><i class="fas fa-user-circle"></i> Perfil Telegram</a>
+        </div>
+
+        <!-- ANÚNCIO RETÂNGULO -->
+        <div class="ad-container">
+            <script>atOptions = {'key' : '649e8619ac522c5b495c01e468041d0e', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {}};</script>
+            <script src="https://www.highperformanceformat.com/649e8619ac522c5b495c01e468041d0e/invoke.js"></script>
+        </div>
+
+        <div id="device-indicator"></div>
+        <footer>&copy; 2026 Panda Ansioso</footer>
+    </div>
+
+    <!-- Botão Admin -->
+    <button class="admin-btn" onclick="toggleAdmin()">
+        <i class="fas fa-cog"></i>
+    </button>
+
+    <!-- Painel Admin -->
+    <div id="admin-panel" class="admin-panel">
+        <div class="admin-content">
+            <h2><i class="fas fa-edit"></i> Gerenciador Panda Ansioso</h2>
+            
+            <label>🎬 Vídeo em Destaque (ID do YouTube)</label>
+            <input type="text" id="admin-featured-video" placeholder="Ex: jKoM0eKkJCo">
+            
+            <label>📹 Vídeos Sugeridos (IDs do YouTube)</label>
+            <div id="admin-suggestions-list"></div>
+            <button class="btn-add" onclick="addSuggestionField()">+ Adicionar Vídeo</button>
+            
+            <label>📦 Download 1 - Nome</label>
+            <input type="text" id="admin-download1-name" placeholder="Nome do arquivo">
+            <label>🔗 Download 1 - Link</label>
+            <input type="text" id="admin-download1-link" placeholder="URL do download">
+            
+            <label>📦 Download 2 - Nome</label>
+            <input type="text" id="admin-download2-name" placeholder="Nome do arquivo">
+            <label>🔗 Download 2 - Link</label>
+            <input type="text" id="admin-download2-link" placeholder="URL do download">
+            
+            <label>📱 TikTok (URL)</label>
+            <input type="text" id="admin-social-tiktok" placeholder="https://www.tiktok.com/@...">
+            
+            <label>💬 Grupo Telegram (URL)</label>
+            <input type="text" id="admin-social-telegram-grupo" placeholder="https://t.me/...">
+            
+            <label>👤 Perfil Telegram (URL)</label>
+            <input type="text" id="admin-social-telegram-perfil" placeholder="https://t.me/...">
+            
+            <div class="admin-buttons">
+                <button class="btn-save" onclick="saveAllData()">💾 Salvar Tudo</button>
+                <button class="btn-close" onclick="toggleAdmin()">❌ Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados padrão (baseado no HTML original)
+        const defaultData = {
+            featuredVideo: "jKoM0eKkJCo",
+            suggestions: [
+                { id: "jKoM0eKkJCo", title: "Como instalar a rom un1ca 3.0.6" },
+                { id: "TjYQ1iUuMlA", title: "Como instalar a Clean UI 7 no S20fe" },
+                { id: "2588HbuLrtA", title: "Como instalar a Polsar OS One Ui 5.1 no S20fe" },
+                { id: "_E906DAWdpw", title: "Super Wallpaper animado xiaomi na tela Aod Samsung - root" },
+                { id: "jdjfZh-ZXq8", title: "Swifyt Blackup - Restauração de Whatsapp" },
+                { id: "ZsF7gaMhMvw", title: "Como instalar Stock em qualquer Samsung" },
+                { id: "giJXYqCZShU", title: "Como desbloquear o bootloader do Celular Samsung" },
+                { id: "GlNHDZpT5UU", title: "Como instalar a Stock rom sem Computador" },
+                { id: "JlKrPbHpijU", title: "Como instalar o Twrp eo Vb meta sem pc - Eros Flash toot" }
+            ],
+            downloads: [
+                { name: "📦 Pulsar OS", link: "https://drive.google.com/drive/folders/1ZtlcC-Mdop1rdt6H27vPiUEM7daKf2Tj" },
+                { name: "📦 Mist OS", link: "https://drive.google.com/drive/folders/1MGQy1z_xjzD6nWI0jYPfeVFChtQwoSS5" }
+            ],
+            social: {
+                tiktok: "https://www.tiktok.com/@pandaansioso",
+                telegramGrupo: "https://t.me/r8q_BR",
+                telegramPerfil: "https://t.me/PANDA_ANSIOSO"
+            }
+        };
+
+        // Carregar dados salvos ou usar padrão
+        let appData = JSON.parse(localStorage.getItem('pandaAnsiosoData')) || defaultData;
+
+        function saveToLocalStorage() {
+            localStorage.setItem('pandaAnsiosoData', JSON.stringify(appData));
+        }
+
+        function renderAdminPanel() {
+            document.getElementById('admin-featured-video').value = appData.featuredVideo;
+            
+            // Sugestões
+            const container = document.getElementById('admin-suggestions-list');
+            container.innerHTML = '';
+            appData.suggestions.forEach((sug, index) => {
+                const div = document.createElement('div');
+                div.className = 'sug-item';
+                div.innerHTML = `
+                    <input type="text" placeholder="ID do YouTube" value="${sug.id}" data-sug-id="${index}" class="sug-id">
+                    <input type="text" placeholder="Título" value="${sug.title.replace(/"/g, '&quot;')}" data-sug-title="${index}" style="margin-top:5px">
+                    <button onclick="removeSuggestion(${index})">Remover</button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('admin-download1-name').value = appData.downloads[0].name;
+            document.getElementById('admin-download1-link').value = appData.downloads[0].link;
+            document.getElementById('admin-download2-name').value = appData.downloads[1].name;
+            document.getElementById('admin-download2-link').value = appData.downloads[1].link;
+            document.getElementById('admin-social-tiktok').value = appData.social.tiktok;
+            document.getElementById('admin-social-telegram-grupo').value = appData.social.telegramGrupo;
+            document.getElementById('admin-social-telegram-perfil').value = appData.social.telegramPerfil;
+        }
+
+        function saveAllData() {
+            // Salvar vídeo em destaque
+            appData.featuredVideo = document.getElementById('admin-featured-video').value;
+            
+            // Salvar sugestões
+            const newSuggestions = [];
+            const sugIds = document.querySelectorAll('.sug-id');
+            const sugTitles = document.querySelectorAll('[data-sug-title]');
+            for (let i = 0; i < sugIds.length; i++) {
+                if (sugIds[i] && sugTitles[i]) {
+                    newSuggestions.push({
+                        id: sugIds[i].value,
+                        title: sugTitles[i].value
+                    });
+                }
+            }
+            appData.suggestions = newSuggestions;
+            
+            // Salvar downloads
+            appData.downloads[0].name = document.getElementById('admin-download1-name').value;
+            appData.downloads[0].link = document.getElementById('admin-download1-link').value;
+            appData.downloads[1].name = document.getElementById('admin-download2-name').value;
+            appData.downloads[1].link = document.getElementById('admin-download2-link').value;
+            
+            // Salvar redes sociais
+            appData.social.tiktok = document.getElementById('admin-social-tiktok').value;
+            appData.social.telegramGrupo = document.getElementById('admin-social-telegram-grupo').value;
+            appData.social.telegramPerfil = document.getElementById('admin-social-telegram-perfil').value;
+            
+            saveToLocalStorage();
+            renderFrontend();
+            alert('✅ Todas as informações foram salvas!');
+        }
+
+        function renderFrontend() {
+            // Vídeo em destaque
+            document.getElementById('random-video').src = "https://www.youtube.com/embed/" + appData.featuredVideo;
+            
+            // Sugestões
+            const list = document.getElementById('suggestions-list');
+            const btnToggle = document.getElementById('btn-toggle');
+            // Limpar exceto o botão
+            while (list.firstChild && list.lastChild !== btnToggle) {
+                if (list.firstChild !== btnToggle) list.removeChild(list.firstChild);
+            }
+            
+            appData.suggestions.forEach((video, index) => {
+                const a = document.createElement("a");
+                a.href = `https://youtu.be/${video.id}`;
+                a.target = "_blank";
+                a.className = index < 3 ? "sug-card show" : "sug-card";
+                a.innerHTML = `<img src="https://img.youtube.com/vi/${video.id}/mqdefault.jpg" alt="${video.title}"><span>${video.title}</span>`;
+                list.insertBefore(a, btnToggle);
+            });
+            
+            // Downloads
+            document.getElementById('download1-name').innerText = appData.downloads[0].name;
+            const btn1 = document.querySelector('.download-item:first-child .btn-download');
+            if (btn1) btn1.setAttribute('data-link', appData.downloads[0].link);
+            
+            document.getElementById('download2-name').innerText = appData.downloads[1].name;
+            const btn2 = document.querySelectorAll('.download-item')[1]?.querySelector('.btn-download');
+            if (btn2) btn2.setAttribute('data-link', appData.downloads[1].link);
+            
+            // Redes sociais
+            document.getElementById('social-tiktok').href = appData.social.tiktok;
+            document.getElementById('social-telegram-grupo').href = appData.social.telegramGrupo;
+            document.getElementById('social-telegram-perfil').href = appData.social.telegramPerfil;
+        }
+
+        function addSuggestionField() {
+            appData.suggestions.push({ id: "novo_id", title: "Novo vídeo" });
+            renderAdminPanel();
+        }
+
+        function removeSuggestion(index) {
+            appData.suggestions.splice(index, 1);
+            renderAdminPanel();
+        }
+
+        function toggleAdmin() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.toggle('show');
+            if (panel.classList.contains('show')) {
+                renderAdminPanel();
+            }
+        }
+
+        // Funções originais adaptadas
+        function toggleView() {
+            const cards = document.querySelectorAll('.sug-card');
+            const btn = document.getElementById('btn-toggle');
+            const isExpanding = btn.innerText === "VER MAIS";
+            cards.forEach((item, index) => {
+                if (isExpanding) { item.classList.add('show'); }
+                else { if (index < 3) { item.classList.add('show'); } else { item.classList.remove('show'); } }
+            });
+            btn.innerText = isExpanding ? "VER MENOS" : "VER MAIS";
+        }
+        
+        function startDownload(btn, finalLink) {
+            if (!finalLink) {
+                alert("Link de download não configurado! Use o botão Admin para configurar.");
+                return;
+            }
+            const hasBeenClicked = btn.getAttribute('data-clicked') === 'true';
+            const adLink = 'https://collshp.com/pandaansioso497?view=storefront';
+
+            if (!hasBeenClicked) {
+                window.open(adLink, '_blank');
+                btn.setAttribute('data-clicked', 'true');
+                btn.classList.add('ready');
+                btn.innerText = "▶️ INICIAR DOWNLOAD";
+            } else {
+                const container = btn.nextElementSibling;
+                const bar = container.querySelector('.progress-bar');
+                container.style.display = "block";
+                btn.disabled = true;
+                let count = 5;
+                btn.innerText = "Aguarde " + count + "s...";
+                setTimeout(() => { bar.style.width = "20%"; }, 50);
+                let interval = setInterval(() => {
+                    count--;
+                    btn.innerText = "Aguarde " + count + "s...";
+                    bar.style.width = ((5 - count + 1) * 20) + "%";
+                    if (count <= 0) { clearInterval(interval); window.location.href = finalLink; }
+                }, 1000);
+            }
+        }
+
+        // Inicializar
+        document.addEventListener("DOMContentLoaded", function() {
+            renderFrontend();
+            document.getElementById("device-indicator").innerText = "Acessando via: " + (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "Celular" : "Computador");
+            // Garantir que os botões de download tenham data-link
+            document.querySelectorAll('.btn-download').forEach(btn => {
+                if (!btn.getAttribute('data-link')) {
+                    btn.setAttribute('data-link', '');
+                }
+            });
+        });
+    </script>
+    
+    <!-- ANÚNCIO POPUNDER -->
+    <script src="https://pl29725634.effectivecpmnetwork.com/6f/9b/2c/6f9b2c7ad1c7f92594d3d5e23ae29dd6.js"></script> 
+</body>
+</html>
